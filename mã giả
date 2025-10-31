@@ -1,0 +1,104 @@
+import numpy as np # type: ignore
+import matplotlib.pyplot as plt # type: ignore
+class Problem:
+    def __init__(self):
+        pass
+def decode(position, problem: Problem):
+    pass
+
+def get_fitness(x, problem : Problem):
+    pass
+class Individual:
+    def __init__(self):
+        self.position = None
+        self.fitness = None 
+        self.velocity = None
+        self.bestFitness = None
+        self.bestPosition = None
+    
+    def gen_indi(self, problem : Problem):
+        # self.velocity = ...
+        # self.position = ...
+        self.fitness = get_fitness(decode(self.position, problem), problem)
+        self.bestFitness = self.fitness
+        self.bestPosition = self.position
+
+    def cal_fitness(self, problem : Problem):
+        sol = decode(self.position, problem)
+        self.fitness = get_fitness(sol, problem)
+        if self.bestFitness > self.fitness:
+            self.bestFitness = self.fitness
+            self.bestPosition = self.position
+    
+    def __repr__(self):
+        result = f"position: {self.position},   fitness: {self.fitness}\n"
+        result += f"bestPosition: {self.bestChromosome},   bestFitness: {self.bestFitness}"
+        return result
+    
+    def move(self, global_best_position, w, c1, c2):
+        r1 = np.random.rand()
+        r2 = np.random.rand()
+        self.velocity = w * self.velocity + r1 * c1 * (self.bestPosition - self.position) + r2 * c2 * (global_best_position - self.position)
+        self.position += self.velocity
+        self.position = np.clip(self.position, 0, 1)
+class Population:
+    def __init__(self, pop_size, problem : Problem):
+        self.pop_size = pop_size
+        self.problem = problem 
+        self.list_indi = []
+        self.global_best_position = None
+        self.global_best_fitness = None
+
+    def gen_pop(self):
+        f_indi = Individual()
+        f_indi.gen_indi(self.problem)
+        self.global_best_fitness = f_indi.fitness
+        self.global_best_position = f_indi.position
+        self.list_indi.append(f_indi)
+
+        for i in range(1, self.pop_size):
+            indi = Individual()
+            indi.gen_indi(self.problem)
+            if self.global_best_fitness > indi.fitness:
+                self.global_best_fitness = indi.fitness
+                self.global_best_position = indi.position
+            self.list_indi.append(indi)
+def PSO(problem: Problem, pop_size, max_gen, w, c1, c2):
+    pop = Population(pop_size, problem)
+    pop.gen_pop()
+    history = []
+    for i in range(max_gen):
+        for indi in pop.list_indi:
+            indi.move(pop.global_best_position, w, c1, c2)
+            indi.cal_fitness(problem)
+            if pop.global_best_fitness > indi.fitness:
+                pop.global_best_fitness = indi.fitness
+                pop.global_best_position = indi.position
+        history.append(pop.global_best_fitness)
+    return history, pop.global_best_position
+#setup
+
+
+problem = Problem()
+
+pop_size = 10
+max_gen = 500
+w = 0.2
+c1 = 2
+c2 = 4
+
+fitness_history, solution = PSO(problem, pop_size, max_gen, w, c1, c2)
+
+#show
+for i in range(len(fitness_history)):
+    print(f"Generation {i}, bestfitness = {fitness_history[i]:.2f}")
+generations = list(range(len(fitness_history)))
+plt.figure(figsize=(10, 5))
+plt.plot(generations, fitness_history, marker='o', linestyle='-', color='b', label='Best Fitness')
+
+plt.xlabel("Generation")
+plt.ylabel("Best Fitness")
+plt.title("Fitness Progress Over Generations")
+plt.legend()
+plt.grid(True)
+plt.show()
